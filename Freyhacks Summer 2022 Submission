@@ -1,0 +1,70 @@
+#Our submission for the 2022 Summer Freyhacks competition
+#Creating a location finder that gives weather reports and availability
+
+#1. we need to have a database to get all of the information from - Google Scraping
+#2. we need to find beaches nearby somehow
+
+
+
+import requests
+#cache records all outputs and puts them together
+cache = {}
+
+#taking in the beach, for weather
+def get_current_temp(beach):
+  beach = beach.capitalize().replace(" ","+")
+  weather_page = requests.get("https://www.weatherwx.com/14dayweather/"+currentState.lower()+'/' + beach + ".html").text
+  search = 'style="text-align: center; font-size: 22px;">'
+  if weather_page.count(search) == 0:
+    print("temperature unavailable")
+  else:
+    beach_weather = {}
+    while search in weather_page:
+      weather_page=weather_page[weather_page.index(search)+len(search):]
+      beach_weather = weather_page[:weather_page.index('&')]
+      return "The current temperature is: "+beach_weather
+
+#getting inputs used to pinpoint location
+currentCity=input("type in the name of the city you are in>>").capitalize().replace(" ", "+")
+currentState = input("type in the abbreviation of the state you are in>>")
+
+#scraping yelp for nearby beaches
+page=requests.get('https://www.yelp.com/search?cflt=beaches&find_loc=' + currentCity + '%2C+' + currentState).text
+
+#looking for the names of the nearby beaches
+search = 'class="css-1m051bw" target="_blank" name="'
+if page.count(search) == 0:
+  print("City not found")
+else:
+  if currentCity in cache:
+    print(cache[currentCity])
+  else:
+    beach_and_weather = {}
+    print("BEACHES NEAR YOU....")
+    while search in page:
+      page = page[page.index(search)+len(search):]
+      beach_name = page[:page.index('"')]
+      current_weather = get_current_temp(beach_name)
+      if current_weather != "The current temperature is: ":
+        beach_and_weather[beach_name] = [current_weather] 
+
+        
+      """
+
+      1. make a seperate function maybe called get temps that takes in a beach name, and a city and returns a list
+      - ideal case: returns [current temp, low temp, high temp] which are ints
+      - case where google cannot find maybe just return "NOT FOUND" or an empty list? depends on you
+      2. set beach_and_weather[beach_name] = get_temps(beach_name, currentState)
+      
+      """
+
+results = {}
+cache[currentCity] = beach_and_weather
+
+
+for index, pair in enumerate(beach_and_weather.items()):
+  if index == 5:
+    break
+  key, value = pair
+  print(key+",", value[0])
+print("*ALL TEMPERATURES ARE IN FAHRENHEIT*")
